@@ -326,6 +326,42 @@ body {
   font-weight: 500;
 }
 
+.voice-action-group {
+  width: 100%;
+}
+
+.voice-status-idle {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.voice-status-recognizing {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.voice-status-success {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.voice-status-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.success-icon {
+  color: #16a34a;
+}
+
+.recognition-result {
+  margin: 10px 0 0 !important;
+  color: #111827;
+  font-size: 14px;
+  line-height: 1.8;
+  font-weight: 500;
+}
+
 /* 对话记录 */
 
 .dialogue-card {

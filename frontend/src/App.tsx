@@ -6,12 +6,16 @@ import FeedbackPanel from './components/FeedbackPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import VoiceInputPanel from './components/VoiceInputPanel';
 import { practiceScenarios } from './constants/scenarios';
+import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { createMockAsrResult } from './mocks';
 import type {
   DialogueMessage,
+  LatencyMetrics,
+  RecognitionSource,
   RecognitionStatus,
   ScenarioKey,
 } from './types/practice';
+import { createDialogueMessage } from './utils/message';
 
 const { Content } = Layout;
 const { Title, Paragraph } = Typography;
@@ -20,23 +24,23 @@ function App() {
   const [selectedScenarioKey, setSelectedScenarioKey] =
     useState<ScenarioKey>('interview');
   const [customScenario, setCustomScenario] = useState('');
-  // 中间对话区真正显示的消息列表
   const [messages, setMessages] = useState<DialogueMessage[]>([]);
-
-  // 当前识别流程状态：idle / recognizing / success / error
   const [recognitionStatus, setRecognitionStatus] =
     useState<RecognitionStatus>('idle');
-
-  // 本次识别出来的英文文本
+  const [recognitionSource, setRecognitionSource] =
+    useState<RecognitionSource>(null);
   const [recognizedText, setRecognizedText] = useState('');
-
-  // 如果识别失败，要显示的错误信息
   const [recognitionError, setRecognitionError] = useState('');
-
-  // 最近一次识别耗时
+  const [recognitionNotice, setRecognitionNotice] = useState('');
   const [lastAsrMs, setLastAsrMs] = useState<number | null>(null);
 
   const recognitionTimerRef = useRef<number | null>(null);
+
+  const {
+    isSupported: isSpeechRecognitionSupported,
+    startRecognition,
+    stopRecognition,
+  } = useSpeechRecognition();
 
   const selectedScenario = useMemo(() => {
     return practiceScenarios.find(
@@ -49,10 +53,6 @@ function App() {
       ? customScenario.trim()
       : selectedScenario?.title ?? '未选择场景';
 
-  // 作用是：
-  // 如果之前已经点过一次“开始说话”，但那次 mock 识别还没完成，
-  // 现在又切场景或再次点击。
-  // 那就先把旧的定时任务取消掉，避免旧结果晚一点回来，把新状态冲掉。
   const clearRecognitionTimer = () => {
     if (recognitionTimerRef.current) {
       window.clearTimeout(recognitionTimerRef.current);
@@ -60,13 +60,35 @@ function App() {
     }
   };
 
-  // 切场景时顺手清空练习状态
+  const appendUserMessage = (
+    text: string,
+    latency: LatencyMetrics,
+    source: Exclude<RecognitionSource, null>,
+  ) => {
+    const userMessage = createDialogueMessage({
+      role: 'user',
+      content: text,
+      scenarioKey: selectedScenarioKey,
+      scenarioName: activeScenarioName,
+      latency,
+    });
+
+    setRecognizedText(text);
+    setLastAsrMs(latency.asrMs);
+    setRecognitionSource(source);
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setRecognitionStatus('success');
+  };
+
   const resetPracticeState = () => {
     clearRecognitionTimer();
+    stopRecognition();
     setMessages([]);
     setRecognitionStatus('idle');
+    setRecognitionSource(null);
     setRecognizedText('');
     setRecognitionError('');
+    setRecognitionNotice('');
     setLastAsrMs(null);
   };
 
@@ -75,16 +97,23 @@ function App() {
     resetPracticeState();
   };
 
-  const handleStartMockRecognition = () => {
-    // 开始识别前，先清现场
+  const prepareRecognition = () => {
     clearRecognitionTimer();
-
     setRecognitionStatus('recognizing');
+    setRecognitionSource(null);
     setRecognizedText('');
     setRecognitionError('');
+    setRecognitionNotice('');
     setLastAsrMs(null);
+  };
 
-    // 用 setTimeout 模拟识别耗时
+  const startMockRecognitionFlow = (notice?: string) => {
+    prepareRecognition();
+
+    if (notice) {
+      setRecognitionNotice(notice);
+    }
+
     recognitionTimerRef.current = window.setTimeout(() => {
       try {
         const mockResult = createMockAsrResult({
@@ -94,6 +123,7 @@ function App() {
 
         setRecognizedText(mockResult.recognizedText);
         setLastAsrMs(mockResult.latency.asrMs);
+        setRecognitionSource('mock');
         setMessages((prevMessages) => [
           ...prevMessages,
           mockResult.userMessage,
@@ -108,11 +138,44 @@ function App() {
     }, 900);
   };
 
+  const handleStartMockRecognition = () => {
+    startMockRecognitionFlow();
+  };
+
+  const handleStartBrowserRecognition = async () => {
+    if (!isSpeechRecognitionSupported) {
+      startMockRecognitionFlow(
+        '当前浏览器不支持真实语音识别，已自动切换到 Mock ASR。',
+      );
+      return;
+    }
+
+    prepareRecognition();
+
+    try {
+      const browserResult = await startRecognition();
+
+      appendUserMessage(
+        browserResult.recognizedText,
+        browserResult.latency,
+        'browser',
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '真实语音识别失败';
+
+      startMockRecognitionFlow(
+        `真实语音识别失败：${errorMessage}。已自动切换到 Mock ASR。`,
+      );
+    }
+  };
+
   useEffect(() => {
     return () => {
       clearRecognitionTimer();
+      stopRecognition();
     };
-  }, []);
+  }, [stopRecognition]);
 
   return (
     <Layout className="app-shell">
@@ -144,9 +207,13 @@ function App() {
             <VoiceInputPanel
               activeScenarioName={activeScenarioName}
               recognitionStatus={recognitionStatus}
+              recognitionSource={recognitionSource}
               recognizedText={recognizedText}
               recognitionError={recognitionError}
+              recognitionNotice={recognitionNotice}
               lastAsrMs={lastAsrMs}
+              isSpeechRecognitionSupported={isSpeechRecognitionSupported}
+              onStartBrowserRecognition={handleStartBrowserRecognition}
               onStartMockRecognition={handleStartMockRecognition}
             />
           </aside>

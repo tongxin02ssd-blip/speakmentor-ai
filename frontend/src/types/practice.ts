@@ -12,6 +12,8 @@ export type MessageRole = 'user' | 'assistant';
 
 export type RecognitionStatus = 'idle' | 'recognizing' | 'success' | 'error';
 
+export type RecognitionSource = 'browser' | 'mock' | null;
+
 export interface DialogueMessage {
   id: string;
   role: MessageRole;
@@ -59,13 +61,13 @@ export interface DialogueTurnFeedback {
 }
 
 export interface MockAsrResult {
-  // 语音识别最终产出的文本内容，会显示在语音输入面板里。
   recognizedText: string;
-
-  // 把识别结果包装成一条“用户消息”，方便直接追加到对话列表。
   userMessage: DialogueMessage;
-  
-  // 本次 mock 识别的耗时数据，用来展示识别用了多少毫秒。
+  latency: LatencyMetrics;
+}
+
+export interface BrowserAsrResult {
+  recognizedText: string;
   latency: LatencyMetrics;
 }
 
