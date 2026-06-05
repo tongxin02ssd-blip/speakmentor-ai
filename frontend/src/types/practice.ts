@@ -14,6 +14,8 @@ export type RecognitionStatus = 'idle' | 'recognizing' | 'success' | 'error';
 
 export type RecognitionSource = 'browser' | 'mock' | null;
 
+export type AiReplyStatus = 'idle' | 'thinking' | 'success' | 'error';
+
 export interface DialogueMessage {
   id: string;
   role: MessageRole;
@@ -68,6 +70,11 @@ export interface MockAsrResult {
 
 export interface BrowserAsrResult {
   recognizedText: string;
+  latency: LatencyMetrics;
+}
+
+export interface MockAiReplyResult {
+  aiMessage: DialogueMessage;
   latency: LatencyMetrics;
 }
 

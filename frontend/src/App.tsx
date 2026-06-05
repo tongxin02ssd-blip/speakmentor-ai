@@ -7,8 +7,9 @@ import ScenarioPanel from './components/ScenarioPanel';
 import VoiceInputPanel from './components/VoiceInputPanel';
 import { practiceScenarios } from './constants/scenarios';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
-import { createMockAsrResult } from './mocks';
+import { createMockAiReplyResult, createMockAsrResult } from './mocks';
 import type {
+  AiReplyStatus,
   DialogueMessage,
   LatencyMetrics,
   RecognitionSource,
@@ -25,6 +26,7 @@ function App() {
     useState<ScenarioKey>('interview');
   const [customScenario, setCustomScenario] = useState('');
   const [messages, setMessages] = useState<DialogueMessage[]>([]);
+
   const [recognitionStatus, setRecognitionStatus] =
     useState<RecognitionStatus>('idle');
   const [recognitionSource, setRecognitionSource] =
@@ -34,7 +36,12 @@ function App() {
   const [recognitionNotice, setRecognitionNotice] = useState('');
   const [lastAsrMs, setLastAsrMs] = useState<number | null>(null);
 
+  const [aiReplyStatus, setAiReplyStatus] =
+    useState<AiReplyStatus>('idle');
+  const [aiReplyError, setAiReplyError] = useState('');
+
   const recognitionTimerRef = useRef<number | null>(null);
+  const aiReplyTimerRef = useRef<number | null>(null);
 
   const {
     isSupported: isSpeechRecognitionSupported,
@@ -60,6 +67,41 @@ function App() {
     }
   };
 
+  const clearAiReplyTimer = () => {
+    if (aiReplyTimerRef.current) {
+      window.clearTimeout(aiReplyTimerRef.current);
+      aiReplyTimerRef.current = null;
+    }
+  };
+
+  const startMockAiReplyFlow = (userText: string, asrMs: number) => {
+    clearAiReplyTimer();
+    setAiReplyStatus('thinking');
+    setAiReplyError('');
+
+    aiReplyTimerRef.current = window.setTimeout(() => {
+      try {
+        const mockAiResult = createMockAiReplyResult({
+          scenarioKey: selectedScenarioKey,
+          scenarioName: activeScenarioName,
+          userText,
+          asrMs,
+        });
+
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          mockAiResult.aiMessage,
+        ]);
+        setAiReplyStatus('success');
+      } catch {
+        setAiReplyStatus('error');
+        setAiReplyError('Mock AI 回复生成失败，请重新尝试。');
+      } finally {
+        aiReplyTimerRef.current = null;
+      }
+    }, 900);
+  };
+
   const appendUserMessage = (
     text: string,
     latency: LatencyMetrics,
@@ -78,11 +120,15 @@ function App() {
     setRecognitionSource(source);
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setRecognitionStatus('success');
+
+    startMockAiReplyFlow(text, latency.asrMs);
   };
 
   const resetPracticeState = () => {
     clearRecognitionTimer();
+    clearAiReplyTimer();
     stopRecognition();
+
     setMessages([]);
     setRecognitionStatus('idle');
     setRecognitionSource(null);
@@ -90,6 +136,8 @@ function App() {
     setRecognitionError('');
     setRecognitionNotice('');
     setLastAsrMs(null);
+    setAiReplyStatus('idle');
+    setAiReplyError('');
   };
 
   const handleSelectScenario = (scenarioKey: ScenarioKey) => {
@@ -99,12 +147,16 @@ function App() {
 
   const prepareRecognition = () => {
     clearRecognitionTimer();
+    clearAiReplyTimer();
+
     setRecognitionStatus('recognizing');
     setRecognitionSource(null);
     setRecognizedText('');
     setRecognitionError('');
     setRecognitionNotice('');
     setLastAsrMs(null);
+    setAiReplyStatus('idle');
+    setAiReplyError('');
   };
 
   const startMockRecognitionFlow = (notice?: string) => {
@@ -129,6 +181,11 @@ function App() {
           mockResult.userMessage,
         ]);
         setRecognitionStatus('success');
+
+        startMockAiReplyFlow(
+          mockResult.recognizedText,
+          mockResult.latency.asrMs,
+        );
       } catch {
         setRecognitionStatus('error');
         setRecognitionError('Mock ASR 识别失败，请重新尝试。');
@@ -173,6 +230,7 @@ function App() {
   useEffect(() => {
     return () => {
       clearRecognitionTimer();
+      clearAiReplyTimer();
       stopRecognition();
     };
   }, [stopRecognition]);
@@ -222,6 +280,8 @@ function App() {
             <DialoguePanel
               activeScenarioName={activeScenarioName}
               messages={messages}
+              aiReplyStatus={aiReplyStatus}
+              aiReplyError={aiReplyError}
             />
           </main>
 

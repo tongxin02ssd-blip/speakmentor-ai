@@ -1,12 +1,18 @@
-import { Card, Empty, Space, Tag, Typography } from 'antd';
-import { RobotOutlined, UserOutlined } from '@ant-design/icons';
-import type { DialogueMessage } from '../types/practice';
+import { Alert, Card, Empty, Space, Tag, Typography } from 'antd';
+import {
+  LoadingOutlined,
+  RobotOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import type { AiReplyStatus, DialogueMessage } from '../types/practice';
 
 const { Text, Paragraph } = Typography;
 
 interface DialoguePanelProps {
   activeScenarioName: string;
   messages: DialogueMessage[];
+  aiReplyStatus: AiReplyStatus;
+  aiReplyError: string;
 }
 
 const formatMessageTime = (value: string) => {
@@ -16,18 +22,30 @@ const formatMessageTime = (value: string) => {
   });
 };
 
-function DialoguePanel({ activeScenarioName, messages }: DialoguePanelProps) {
+function DialoguePanel({
+  activeScenarioName,
+  messages,
+  aiReplyStatus,
+  aiReplyError,
+}: DialoguePanelProps) {
   const latestLatency = [...messages]
     .reverse()
     .find((message) => message.latency)?.latency;
+
+  const isAiThinking = aiReplyStatus === 'thinking';
 
   return (
     <Card
       className="dialogue-card"
       title="AI 对话记录"
-      extra={<Tag color="processing">{activeScenarioName}</Tag>}
+      extra={
+        <Space>
+          {isAiThinking && <Tag color="processing">AI Thinking</Tag>}
+          <Tag color="processing">{activeScenarioName}</Tag>
+        </Space>
+      }
     >
-      {messages.length === 0 ? (
+      {messages.length === 0 && !isAiThinking ? (
         <div className="dialogue-placeholder">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -69,7 +87,38 @@ function DialoguePanel({ activeScenarioName, messages }: DialoguePanelProps) {
               </div>
             );
           })}
+
+          {isAiThinking && (
+            <div className="message-row ai-message">
+              <div className="message-avatar">
+                <RobotOutlined />
+              </div>
+
+              <div className="message-content">
+                <div className="message-meta">
+                  <Text className="message-role">SpeakMentor AI</Text>
+                  <Text className="message-time">thinking</Text>
+                </div>
+
+                <div className="message-bubble thinking-bubble">
+                  <Space>
+                    <LoadingOutlined />
+                    <Text>AI 正在根据当前场景生成英文回复...</Text>
+                  </Space>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {aiReplyError && (
+        <Alert
+          className="dialogue-alert"
+          type="error"
+          showIcon
+          message={aiReplyError}
+        />
       )}
 
       <div className="latency-bar">
