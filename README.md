@@ -11,7 +11,7 @@ SpeakMentor AI 是一款场景化英语口语陪练助手，面向英语学习�
 - [x] 初始化前端工程
 - [x] 接入 React + TypeScript + Vite
 - [x] 接入 Ant Design
-- [ ] 场景选择
+- [x] 场景选择
 - [ ] 语音输入
 - [ ] AI 对话
 - [ ] 纠错反馈

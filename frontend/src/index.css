@@ -137,18 +137,28 @@ body {
 }
 
 .scenario-item {
+  width: 100%;
   padding: 14px;
   border-radius: 16px;
   background: #f9fafb;
   border: 1px solid #eef2f7;
+  text-align: left;
+  cursor: pointer;
   transition:
     border-color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .scenario-item:hover {
   background: #ffffff;
   border-color: #bfdbfe;
+}
+
+.scenario-item-active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.1);
 }
 
 .scenario-icon {
@@ -171,11 +181,58 @@ body {
   font-weight: 600;
 }
 
+.scenario-english-title {
+  display: block;
+  margin-bottom: 4px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .scenario-description {
   margin-bottom: 0 !important;
   color: #6b7280;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.custom-scenario-box {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.custom-scenario-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.custom-scenario-tip {
+  margin-top: 12px;
+}
+
+.current-scenario-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.current-scenario-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.current-scenario-name {
+  display: block;
+  color: #1d4ed8;
+  font-weight: 700;
 }
 
 .voice-panel {
