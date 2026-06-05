@@ -536,6 +536,123 @@ body {
   margin-bottom: 8px;
 }
 
+.feedback-detail {
+  width: 100%;
+}
+
+.feedback-loading {
+  padding-top: 8px;
+}
+
+.feedback-block {
+  padding: 14px;
+  border-radius: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+}
+
+.feedback-highlight-block {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.feedback-original {
+  margin: 8px 0 0 !important;
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+.feedback-corrected {
+  margin: 8px 0 0 !important;
+  color: #15803d;
+  line-height: 1.7;
+  font-weight: 500;
+}
+
+.feedback-natural {
+  margin: 8px 0 0 !important;
+  color: #1d4ed8;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+.feedback-explanation {
+  margin: 8px 0 0 !important;
+  color: #4b5563;
+  line-height: 1.8;
+}
+
+.key-point-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.key-point-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: #2563eb;
+}
+
+.key-point-item .ant-typography {
+  color: #374151;
+  line-height: 1.6;
+}
+
+.pronunciation-list {
+  width: 100%;
+}
+
+.pronunciation-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+}
+
+.pronunciation-item > .anticon {
+  margin-top: 3px;
+  color: #2563eb;
+}
+
+.pronunciation-title {
+  display: block;
+  margin-bottom: 6px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.pronunciation-text {
+  margin-bottom: 0 !important;
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.overall-score-card {
+  padding: 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111827;
+}
+
+.overall-score-label {
+  color: #d1d5db;
+  font-size: 13px;
+}
+
+.overall-score-value {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 800;
+}
+
 /* 响应式 */
 
 @media (max-width: 1180px) {

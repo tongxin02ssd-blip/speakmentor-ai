@@ -7,10 +7,16 @@ import ScenarioPanel from './components/ScenarioPanel';
 import VoiceInputPanel from './components/VoiceInputPanel';
 import { practiceScenarios } from './constants/scenarios';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
-import { createMockAiReplyResult, createMockAsrResult } from './mocks';
+import {
+  createMockAiReplyResult,
+  createMockAsrResult,
+  createMockTurnFeedback,
+} from './mocks';
 import type {
   AiReplyStatus,
   DialogueMessage,
+  DialogueTurnFeedback,
+  FeedbackStatus,
   LatencyMetrics,
   RecognitionSource,
   RecognitionStatus,
@@ -40,8 +46,15 @@ function App() {
     useState<AiReplyStatus>('idle');
   const [aiReplyError, setAiReplyError] = useState('');
 
+  const [feedbackStatus, setFeedbackStatus] =
+    useState<FeedbackStatus>('idle');
+  const [latestFeedback, setLatestFeedback] =
+    useState<DialogueTurnFeedback | null>(null);
+  const [feedbackError, setFeedbackError] = useState('');
+
   const recognitionTimerRef = useRef<number | null>(null);
   const aiReplyTimerRef = useRef<number | null>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
 
   const {
     isSupported: isSpeechRecognitionSupported,
@@ -74,8 +87,46 @@ function App() {
     }
   };
 
-  const startMockAiReplyFlow = (userText: string, asrMs: number) => {
+  const clearFeedbackTimer = () => {
+    if (feedbackTimerRef.current) {
+      window.clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = null;
+    }
+  };
+
+  const startMockFeedbackFlow = (messageId: string, userText: string) => {
+    clearFeedbackTimer();
+
+    setFeedbackStatus('generating');
+    setLatestFeedback(null);
+    setFeedbackError('');
+
+    feedbackTimerRef.current = window.setTimeout(() => {
+      try {
+        const feedback = createMockTurnFeedback({
+          messageId,
+          userText,
+          scenarioKey: selectedScenarioKey,
+        });
+
+        setLatestFeedback(feedback);
+        setFeedbackStatus('success');
+      } catch {
+        setFeedbackStatus('error');
+        setFeedbackError('Mock 纠错反馈生成失败，请重新尝试。');
+      } finally {
+        feedbackTimerRef.current = null;
+      }
+    }, 700);
+  };
+
+  const startMockAiReplyFlow = (
+    userMessageId: string,
+    userText: string,
+    asrMs: number,
+  ) => {
     clearAiReplyTimer();
+
     setAiReplyStatus('thinking');
     setAiReplyError('');
 
@@ -93,6 +144,8 @@ function App() {
           mockAiResult.aiMessage,
         ]);
         setAiReplyStatus('success');
+
+        startMockFeedbackFlow(userMessageId, userText);
       } catch {
         setAiReplyStatus('error');
         setAiReplyError('Mock AI 回复生成失败，请重新尝试。');
@@ -121,12 +174,13 @@ function App() {
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setRecognitionStatus('success');
 
-    startMockAiReplyFlow(text, latency.asrMs);
+    startMockAiReplyFlow(userMessage.id, text, latency.asrMs);
   };
 
   const resetPracticeState = () => {
     clearRecognitionTimer();
     clearAiReplyTimer();
+    clearFeedbackTimer();
     stopRecognition();
 
     setMessages([]);
@@ -136,8 +190,13 @@ function App() {
     setRecognitionError('');
     setRecognitionNotice('');
     setLastAsrMs(null);
+
     setAiReplyStatus('idle');
     setAiReplyError('');
+
+    setFeedbackStatus('idle');
+    setLatestFeedback(null);
+    setFeedbackError('');
   };
 
   const handleSelectScenario = (scenarioKey: ScenarioKey) => {
@@ -148,6 +207,7 @@ function App() {
   const prepareRecognition = () => {
     clearRecognitionTimer();
     clearAiReplyTimer();
+    clearFeedbackTimer();
 
     setRecognitionStatus('recognizing');
     setRecognitionSource(null);
@@ -155,8 +215,13 @@ function App() {
     setRecognitionError('');
     setRecognitionNotice('');
     setLastAsrMs(null);
+
     setAiReplyStatus('idle');
     setAiReplyError('');
+
+    setFeedbackStatus('idle');
+    setLatestFeedback(null);
+    setFeedbackError('');
   };
 
   const startMockRecognitionFlow = (notice?: string) => {
@@ -183,6 +248,7 @@ function App() {
         setRecognitionStatus('success');
 
         startMockAiReplyFlow(
+          mockResult.userMessage.id,
           mockResult.recognizedText,
           mockResult.latency.asrMs,
         );
@@ -231,6 +297,7 @@ function App() {
     return () => {
       clearRecognitionTimer();
       clearAiReplyTimer();
+      clearFeedbackTimer();
       stopRecognition();
     };
   }, [stopRecognition]);
@@ -286,7 +353,11 @@ function App() {
           </main>
 
           <aside className="right-column">
-            <FeedbackPanel />
+            <FeedbackPanel
+              feedbackStatus={feedbackStatus}
+              latestFeedback={latestFeedback}
+              feedbackError={feedbackError}
+            />
           </aside>
         </section>
       </Content>

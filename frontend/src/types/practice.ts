@@ -16,6 +16,8 @@ export type RecognitionSource = 'browser' | 'mock' | null;
 
 export type AiReplyStatus = 'idle' | 'thinking' | 'success' | 'error';
 
+export type FeedbackStatus = 'idle' | 'generating' | 'success' | 'error';
+
 export interface DialogueMessage {
   id: string;
   role: MessageRole;
