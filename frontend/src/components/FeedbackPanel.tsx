@@ -6,6 +6,7 @@ import {
   Progress,
   Skeleton,
   Space,
+  Tag,
   Typography,
 } from 'antd';
 import {
@@ -17,6 +18,13 @@ import type {
   DialogueTurnFeedback,
   FeedbackStatus,
 } from '../types/practice';
+import {
+  createScoreDimensions,
+  getScoreLevel,
+  getScoreLevelDescription,
+  getScoreLevelText,
+  getScoreTagColor,
+} from '../utils/score';
 
 const { Text, Paragraph } = Typography;
 
@@ -32,6 +40,9 @@ function FeedbackPanel({
   feedbackError,
 }: FeedbackPanelProps) {
   const isGenerating = feedbackStatus === 'generating';
+  const score = latestFeedback?.score;
+  const scoreLevel = score ? getScoreLevel(score.overall) : null;
+  const scoreDimensions = score ? createScoreDimensions(score) : [];
 
   return (
     <div className="feedback-column">
@@ -143,70 +154,58 @@ function FeedbackPanel({
       </Card>
 
       <Card className="panel-card" title="量化评分">
-        <Space direction="vertical" size={14} className="score-list">
-          <div>
-            <div className="score-row">
-              <Text>流畅度</Text>
-              <Text type="secondary">
-                {latestFeedback ? latestFeedback.score.fluency : '--'}
-              </Text>
-            </div>
-            <Progress
-              percent={latestFeedback?.score.fluency ?? 0}
-              showInfo={false}
-            />
-          </div>
+        {!score && (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="完成一轮练习后展示量化评分"
+          />
+        )}
 
-          <div>
-            <div className="score-row">
-              <Text>准确度</Text>
-              <Text type="secondary">
-                {latestFeedback ? latestFeedback.score.accuracy : '--'}
-              </Text>
-            </div>
-            <Progress
-              percent={latestFeedback?.score.accuracy ?? 0}
-              showInfo={false}
-            />
-          </div>
-
-          <div>
-            <div className="score-row">
-              <Text>表达自然度</Text>
-              <Text type="secondary">
-                {latestFeedback ? latestFeedback.score.naturalness : '--'}
-              </Text>
-            </div>
-            <Progress
-              percent={latestFeedback?.score.naturalness ?? 0}
-              showInfo={false}
-            />
-          </div>
-
-          <div>
-            <div className="score-row">
-              <Text>场景完成度</Text>
-              <Text type="secondary">
-                {latestFeedback ? latestFeedback.score.scenarioCompletion : '--'}
-              </Text>
-            </div>
-            <Progress
-              percent={latestFeedback?.score.scenarioCompletion ?? 0}
-              showInfo={false}
-            />
-          </div>
-        </Space>
-
-        {latestFeedback && (
+        {score && scoreLevel && (
           <>
+            <div className="score-summary-card">
+              <div>
+                <Text className="score-summary-label">综合评分</Text>
+
+                <div className="score-summary-main">
+                  <Text className="score-summary-value">{score.overall}</Text>
+                  <Text className="score-summary-total">/ 100</Text>
+                </div>
+              </div>
+
+              <Tag color={getScoreTagColor(score.overall)}>
+                {getScoreLevelText(scoreLevel)}
+              </Tag>
+            </div>
+
+            <Paragraph className="score-summary-description">
+              {getScoreLevelDescription(score.overall)}
+            </Paragraph>
+
             <Divider />
 
-            <div className="overall-score-card">
-              <Text className="overall-score-label">综合评分</Text>
-              <Text className="overall-score-value">
-                {latestFeedback.score.overall}
-              </Text>
-            </div>
+            <Space direction="vertical" size={14} className="score-list">
+              {scoreDimensions.map((dimension) => (
+                <div className="score-dimension-card" key={dimension.key}>
+                  <div className="score-row">
+                    <div>
+                      <Text className="score-dimension-title">
+                        {dimension.label}
+                      </Text>
+                      <Paragraph className="score-dimension-description">
+                        {dimension.description}
+                      </Paragraph>
+                    </div>
+
+                    <Tag color={getScoreTagColor(dimension.value)}>
+                      {dimension.value}
+                    </Tag>
+                  </div>
+
+                  <Progress percent={dimension.value} showInfo={false} />
+                </div>
+              ))}
+            </Space>
           </>
         )}
       </Card>

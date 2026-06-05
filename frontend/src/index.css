@@ -633,24 +633,69 @@ body {
   line-height: 1.7;
 }
 
-.overall-score-card {
-  padding: 16px;
-  border-radius: 16px;
+.score-summary-card {
+  padding: 18px;
+  border-radius: 18px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
   background: #111827;
 }
 
-.overall-score-label {
+.score-summary-label {
+  display: block;
+  margin-bottom: 8px;
   color: #d1d5db;
   font-size: 13px;
 }
 
-.overall-score-value {
+.score-summary-main {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.score-summary-value {
   color: #ffffff;
-  font-size: 28px;
+  font-size: 42px;
   font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.score-summary-total {
+  color: #9ca3af;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.score-summary-description {
+  margin: 14px 0 0 !important;
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+.score-dimension-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+}
+
+.score-dimension-title {
+  display: block;
+  margin-bottom: 4px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.score-dimension-description {
+  max-width: 220px;
+  margin-bottom: 0 !important;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 /* 响应式 */
