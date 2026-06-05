@@ -1,38 +1,73 @@
-# SpeakMentor AI
+# React + TypeScript + Vite
 
-SpeakMentor AI 是一款场景化英语口语陪练助手，面向英语学习者、求职者和职场新人，支持在面试、点餐、会议等真实场景下进行英语口语练习。
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 项目定位
+Currently, two official plugins are available:
 
-用户可以选择练习场景，通过语音输入与 AI 进行英文对话，并获得表达纠错、发音反馈和课后总结报告。
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## 当前进度
+## React Compiler
 
-- [x] 初始化前端工程
-- [x] 接入 React + TypeScript + Vite
-- [x] 接入 Ant Design
-- [ ] 场景选择
-- [ ] 语音输入
-- [ ] AI 对话
-- [ ] 纠错反馈
-- [ ] 课后总结
-- [ ] 报告导出
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## 技术栈
+## Expanding the ESLint configuration
 
-### 前端
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-- React
-- TypeScript
-- Vite
-- Ant Design
-- Axios
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-### 后端
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-后续计划使用：
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-- Node.js
-- Express
-- TypeScript
-- AI 大模型 API
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
