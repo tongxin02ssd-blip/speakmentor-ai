@@ -6,6 +6,7 @@ import FeedbackPanel from './components/FeedbackPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import VoiceInputPanel from './components/VoiceInputPanel';
 import { practiceScenarios } from './constants/scenarios';
+import { createMockDialogueResult } from './mocks';
 import type { ScenarioKey } from './types/practice';
 
 const { Content } = Layout;
@@ -26,6 +27,15 @@ function App() {
     selectedScenarioKey === 'custom' && customScenario.trim()
       ? customScenario.trim()
       : selectedScenario?.title ?? '未选择场景';
+
+  const mockDialogueMessages = useMemo(() => {
+    const mockResult = createMockDialogueResult({
+      scenarioKey: selectedScenarioKey,
+      scenarioName: activeScenarioName,
+    });
+
+    return [mockResult.userMessage, mockResult.aiMessage];
+  }, [selectedScenarioKey, activeScenarioName]);
 
   return (
     <Layout className="app-shell">
@@ -58,7 +68,10 @@ function App() {
           </aside>
 
           <main className="center-column">
-            <DialoguePanel activeScenarioName={activeScenarioName} />
+            <DialoguePanel
+              activeScenarioName={activeScenarioName}
+              messages={mockDialogueMessages}
+            />
           </main>
 
           <aside className="right-column">
