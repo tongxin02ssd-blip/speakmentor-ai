@@ -1,5 +1,6 @@
 import type {
   DialogueMessage,
+  DialogueTurnFeedback,
   MockAiReplyResult,
   MockAsrResult,
   MockDialogueResult,
@@ -130,6 +131,67 @@ export const createMockAiReplyResult = ({
   };
 };
 
+interface CreateMockTurnFeedbackParams {
+  messageId: string;
+  userText: string;
+  scenarioKey: ScenarioKey;
+}
+
+export const createMockTurnFeedback = ({
+  messageId,
+  userText,
+  scenarioKey,
+}: CreateMockTurnFeedbackParams): DialogueTurnFeedback => {
+  const naturalExpressionMap: Record<ScenarioKey, string> = {
+    interview:
+      'I would like to walk you through my frontend project, which is an AI-powered tool for English speaking practice.',
+    restaurant:
+      'I would like to order a coffee and a sandwich. Could you recommend something popular?',
+    meeting:
+      'I think we should improve the user experience by simplifying the interface and making the core actions clearer.',
+    custom:
+      'I would like to practice this situation in English and make my expression sound more natural and confident.',
+  };
+
+  const correctedTextMap: Record<ScenarioKey, string> = {
+    interview:
+      'I would like to introduce my frontend project. It is an AI-powered speaking practice tool.',
+    restaurant:
+      'I would like to order a coffee and a sandwich. Do you have any recommendations?',
+    meeting:
+      'I think we should improve the user experience and make the interface cleaner.',
+    custom:
+      'I want to practice speaking English in this custom situation.',
+  };
+
+  return {
+    messageId,
+    correction: {
+      originalText: userText,
+      correctedText: correctedTextMap[scenarioKey],
+      naturalExpression: naturalExpressionMap[scenarioKey],
+      explanation:
+        '你的表达整体可以被理解，但还可以通过更自然的短语、更清晰的句子结构和更具体的场景信息来提升口语表现。',
+      keyPoints: [
+        '优先使用完整句表达，避免过于零散。',
+        '在正式场景中可以使用 “would like to” 提升礼貌程度。',
+        '表达项目或观点时，可以增加具体细节，让内容更有说服力。',
+      ],
+    },
+    pronunciation: {
+      fluencyComment:
+        '整体表达比较流畅，但部分短语之间可以减少停顿，让句子连接更自然。',
+      pronunciationComment:
+        '大部分单词发音清晰，可以重点注意 project、practice、experience 等词的重音。',
+      paceComment:
+        '语速适中，适合正式交流场景。后续可以尝试更自然的语调起伏。',
+      improvementTip:
+        '建议把句子按意义分组朗读，例如先说目的，再说项目内容，最后补充价值。',
+    },
+    score: createScore(),
+  };
+};
+
 interface CreateMockDialogueParams {
   scenarioKey: ScenarioKey;
   scenarioName: string;
@@ -174,34 +236,11 @@ export const createMockDialogueResult = ({
   return {
     userMessage,
     aiMessage,
-    feedback: {
+    feedback: createMockTurnFeedback({
       messageId: userMessage.id,
-      correction: {
-        originalText: finalUserText,
-        correctedText:
-          'I would like to introduce my frontend project. It is an AI-powered speaking practice tool.',
-        naturalExpression:
-          'I would like to walk you through my frontend project, which is an AI-powered tool for English speaking practice.',
-        explanation:
-          'Your sentence is understandable. The improved version sounds more natural and uses “walk you through” to make the expression more fluent in a project introduction context.',
-        keyPoints: [
-          'Use “would like to” for a more polite tone.',
-          'Use “AI-powered” as a natural adjective before a product noun.',
-          'Use “walk you through” when introducing a project.',
-        ],
-      },
-      pronunciation: {
-        fluencyComment:
-          'Your expression is mostly fluent, with only minor pauses between phrases.',
-        pronunciationComment:
-          'Most words are clear. Pay attention to the pronunciation of “frontend” and “practice”.',
-        paceComment:
-          'The speaking pace is stable and suitable for a formal conversation.',
-        improvementTip:
-          'Try to group words into meaningful chunks instead of reading word by word.',
-      },
-      score: createScore(),
-    },
+      userText: finalUserText,
+      scenarioKey,
+    }),
   };
 };
 
