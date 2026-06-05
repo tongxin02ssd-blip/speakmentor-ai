@@ -5,25 +5,36 @@ import {
   ClockCircleOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
-import type { RecognitionStatus } from '../types/practice';
+import type {
+  RecognitionSource,
+  RecognitionStatus,
+} from '../types/practice';
 
 const { Text, Paragraph } = Typography;
 
 interface VoiceInputPanelProps {
-  activeScenarioName: string;   //当前练习场景名，比如“面试场景”
-  recognitionStatus: RecognitionStatus;   //当前识别状态
-  recognizedText: string;     //识别出来的英文文本
-  recognitionError: string;     //出错时要显示的错误信息
-  lastAsrMs: number | null;     //最近一次识别耗时
-  onStartMockRecognition: () => void;   //用户点击“开始说话”时要执行的函数
+  activeScenarioName: string;
+  recognitionStatus: RecognitionStatus;
+  recognitionSource: RecognitionSource;
+  recognizedText: string;
+  recognitionError: string;
+  recognitionNotice: string;
+  lastAsrMs: number | null;
+  isSpeechRecognitionSupported: boolean;
+  onStartBrowserRecognition: () => void;
+  onStartMockRecognition: () => void;
 }
 
 function VoiceInputPanel({
   activeScenarioName,
   recognitionStatus,
+  recognitionSource,
   recognizedText,
   recognitionError,
+  recognitionNotice,
   lastAsrMs,
+  isSpeechRecognitionSupported,
+  onStartBrowserRecognition,
   onStartMockRecognition,
 }: VoiceInputPanelProps) {
   const isRecognizing = recognitionStatus === 'recognizing';
@@ -36,10 +47,15 @@ function VoiceInputPanel({
   };
 
   const subtitleTextMap: Record<RecognitionStatus, string> = {
-    idle: '当前使用 Mock ASR，后续 PR 会接入真实语音识别',
-    recognizing: '请稍等，系统正在模拟语音识别流程',
+    idle: '可以使用真实语音识别，也可以使用 Mock ASR 稳定演示',
+    recognizing: '请用英文说一句话，或等待 Mock ASR 返回结果',
     success: '识别结果已追加到 AI 对话记录',
     error: '请重新尝试，或使用 Mock 数据继续演示',
+  };
+
+  const sourceLabelMap: Record<Exclude<RecognitionSource, null>, string> = {
+    browser: 'Browser Speech',
+    mock: 'Mock ASR',
   };
 
   return (
@@ -63,17 +79,28 @@ function VoiceInputPanel({
           </Space>
         </div>
 
-        <Button
-          type="primary"
-          size="large"
-          icon={isRecognizing ? <LoadingOutlined /> : <AudioOutlined />}
-          block
-          loading={isRecognizing}
-          disabled={isRecognizing}
-          onClick={onStartMockRecognition}
-        >
-          {isRecognizing ? '识别中...' : '开始说话'}
-        </Button>
+        <Space direction="vertical" size={10} className="voice-action-group">
+          <Button
+            type="primary"
+            size="large"
+            icon={isRecognizing ? <LoadingOutlined /> : <AudioOutlined />}
+            block
+            loading={isRecognizing}
+            disabled={isRecognizing}
+            onClick={onStartBrowserRecognition}
+          >
+            {isRecognizing ? '识别中...' : '开始真实语音'}
+          </Button>
+
+          <Button
+            size="large"
+            block
+            disabled={isRecognizing}
+            onClick={onStartMockRecognition}
+          >
+            使用 Mock 演示
+          </Button>
+        </Space>
 
         <div className="recognition-box">
           <Space size={8}>
@@ -94,10 +121,24 @@ function VoiceInputPanel({
             </Paragraph>
           ) : (
             <Paragraph className="recognition-placeholder">
-              点击“开始说话”后，将通过 Mock ASR 生成一段英文识别文本。
+              点击“开始真实语音”后，浏览器会尝试识别你的英文表达；如果失败，
+              系统会自动切换到 Mock ASR。
             </Paragraph>
           )}
         </div>
+
+        {!isSpeechRecognitionSupported && (
+          <Alert
+            type="warning"
+            showIcon
+            message="当前浏览器可能不支持真实语音识别"
+            description="建议 demo 时使用 Chrome 浏览器；不支持时仍可通过 Mock ASR 完整演示。"
+          />
+        )}
+
+        {recognitionNotice && (
+          <Alert type="info" showIcon message={recognitionNotice} />
+        )}
 
         {recognitionError && (
           <Alert type="error" showIcon message={recognitionError} />
@@ -108,14 +149,22 @@ function VoiceInputPanel({
             type="success"
             showIcon
             message="识别成功"
-            description="Mock ASR 已生成用户英文表达，并追加到中间的 AI 对话记录中。"
+            description="识别结果已生成用户英文表达，并追加到中间的 AI 对话记录中。"
           />
         )}
 
         <Space wrap>
-          <Tag color="blue">Mock ASR</Tag>
-          <Tag>Web Speech API Later</Tag>
-          <Tag>Fallback Ready</Tag>
+          <Tag color={isSpeechRecognitionSupported ? 'green' : 'orange'}>
+            {isSpeechRecognitionSupported ? 'Browser ASR Ready' : 'Browser ASR Limited'}
+          </Tag>
+
+          <Tag color="blue">Mock Fallback</Tag>
+
+          {recognitionSource && (
+            <Tag color="processing">
+              Source: {sourceLabelMap[recognitionSource]}
+            </Tag>
+          )}
         </Space>
       </div>
     </Card>
