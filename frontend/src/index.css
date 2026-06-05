@@ -1,0 +1,104 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f7fb;
+  color: #111827;
+}
+
+.app-layout {
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.app-header {
+  height: 72px;
+  padding: 0 48px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid #e5e7eb;
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  display: block;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.slogan {
+  display: block;
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.app-content {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 24px;
+}
+
+.hero-section {
+  margin-bottom: 32px;
+  padding: 48px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.hero-title {
+  max-width: 720px;
+  margin-bottom: 0 !important;
+  color: #111827 !important;
+  font-size: 44px !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.04em;
+}
+
+.hero-description {
+  max-width: 680px;
+  margin-bottom: 0 !important;
+  color: #4b5563;
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.feature-card {
+  min-height: 180px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.status-card {
+  margin-top: 24px;
+  border-radius: 20px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 24px;
+  }
+
+  .app-content {
+    padding: 32px 16px;
+  }
+
+  .hero-section {
+    padding: 32px 24px;
+  }
+
+  .hero-title {
+    font-size: 32px !important;
+  }
+}
