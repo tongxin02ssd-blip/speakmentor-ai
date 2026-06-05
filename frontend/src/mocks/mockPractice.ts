@@ -1,5 +1,6 @@
 import type {
   DialogueMessage,
+  MockAiReplyResult,
   MockAsrResult,
   MockDialogueResult,
   PracticeReport,
@@ -9,7 +10,7 @@ import type {
 
 const mockUserTexts: Record<ScenarioKey, string> = {
   interview:
-    'I want to introduce my frontend project. It is an AI speaking practice tool.',
+    'I would like to introduce my frontend project. It is an AI speaking practice tool.',
   restaurant:
     'I would like to order a coffee and a sandwich. Do you have any recommendations?',
   meeting:
@@ -84,6 +85,48 @@ export const createMockAsrResult = ({
     recognizedText,
     userMessage,
     latency,
+  };
+};
+
+interface CreateMockAiReplyParams {
+  scenarioKey: ScenarioKey;
+  scenarioName: string;
+  userText: string;
+  asrMs: number;
+}
+
+export const createMockAiReplyResult = ({
+  scenarioKey,
+  scenarioName,
+  userText,
+  asrMs,
+}: CreateMockAiReplyParams): MockAiReplyResult => {
+  const aiMs = 960;
+  const totalMs = asrMs + aiMs;
+
+  const baseReply = mockAiReplies[scenarioKey];
+
+  const aiMessage: DialogueMessage = {
+    id: createId('ai-message'),
+    role: 'assistant',
+    content: `${baseReply} I noticed you said: “${userText}”`,
+    scenarioKey,
+    scenarioName,
+    createdAt: getNow(),
+    latency: {
+      asrMs,
+      aiMs,
+      totalMs,
+    },
+  };
+
+  return {
+    aiMessage,
+    latency: {
+      asrMs,
+      aiMs,
+      totalMs,
+    },
   };
 };
 

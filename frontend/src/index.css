@@ -492,6 +492,16 @@ body {
   font-weight: 700;
 }
 
+.thinking-bubble {
+  color: #4b5563;
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+.dialogue-alert {
+  margin-top: 18px;
+}
+
 /* 反馈面板 */
 
 .feedback-preview {
