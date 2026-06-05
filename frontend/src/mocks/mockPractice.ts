@@ -1,5 +1,6 @@
 import type {
   DialogueMessage,
+  MockAsrResult,
   MockDialogueResult,
   PracticeReport,
   ScenarioKey,
@@ -49,6 +50,40 @@ const createScore = (): ScoreResult => {
     naturalness,
     scenarioCompletion,
     overall,
+  };
+};
+
+interface CreateMockAsrParams {
+  scenarioKey: ScenarioKey;
+  scenarioName: string;
+}
+
+export const createMockAsrResult = ({
+  scenarioKey,
+  scenarioName,
+}: CreateMockAsrParams): MockAsrResult => {
+  const recognizedText = mockUserTexts[scenarioKey];
+
+  const latency = {
+    asrMs: 820,
+    aiMs: 0,
+    totalMs: 820,
+  };
+
+  const userMessage: DialogueMessage = {
+    id: createId('user-message'),
+    role: 'user',
+    content: recognizedText,
+    scenarioKey,
+    scenarioName,
+    createdAt: getNow(),
+    latency,
+  };
+
+  return {
+    recognizedText,
+    userMessage,
+    latency,
   };
 };
 
