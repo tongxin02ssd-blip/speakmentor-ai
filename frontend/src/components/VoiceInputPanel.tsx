@@ -3,10 +3,19 @@ import { AudioOutlined, LoadingOutlined } from '@ant-design/icons';
 
 const { Text, Paragraph } = Typography;
 
-function VoiceInputPanel() {
+interface VoiceInputPanelProps {
+  activeScenarioName: string;
+}
+
+function VoiceInputPanel({ activeScenarioName }: VoiceInputPanelProps) {
   return (
     <Card className="panel-card" title="语音输入">
       <div className="voice-panel">
+        <div className="current-scenario-card">
+          <Text className="current-scenario-label">当前练习场景</Text>
+          <Text className="current-scenario-name">{activeScenarioName}</Text>
+        </div>
+
         <div className="voice-status">
           <div className="voice-circle">
             <AudioOutlined />

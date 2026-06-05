@@ -3,12 +3,16 @@ import { RobotOutlined, UserOutlined } from '@ant-design/icons';
 
 const { Text, Paragraph } = Typography;
 
-function DialoguePanel() {
+interface DialoguePanelProps {
+  activeScenarioName: string;
+}
+
+function DialoguePanel({ activeScenarioName }: DialoguePanelProps) {
   return (
     <Card
       className="dialogue-card"
       title="AI 对话记录"
-      extra={<Tag color="processing">Waiting</Tag>}
+      extra={<Tag color="processing">{activeScenarioName}</Tag>}
     >
       <div className="dialogue-placeholder">
         <Empty

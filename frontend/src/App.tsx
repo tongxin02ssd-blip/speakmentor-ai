@@ -1,14 +1,32 @@
+import { useMemo, useState } from 'react';
 import { Layout, Typography } from 'antd';
 import AppHeader from './components/AppHeader';
 import DialoguePanel from './components/DialoguePanel';
 import FeedbackPanel from './components/FeedbackPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import VoiceInputPanel from './components/VoiceInputPanel';
+import { practiceScenarios } from './constants/scenarios';
+import type { ScenarioKey } from './types/practice';
 
 const { Content } = Layout;
 const { Title, Paragraph } = Typography;
 
 function App() {
+  const [selectedScenarioKey, setSelectedScenarioKey] =
+    useState<ScenarioKey>('interview');
+  const [customScenario, setCustomScenario] = useState('');
+
+  const selectedScenario = useMemo(() => {
+    return practiceScenarios.find(
+      (scenario) => scenario.key === selectedScenarioKey,
+    );
+  }, [selectedScenarioKey]);
+
+  const activeScenarioName =
+    selectedScenarioKey === 'custom' && customScenario.trim()
+      ? customScenario.trim()
+      : selectedScenario?.title ?? '未选择场景';
+
   return (
     <Layout className="app-shell">
       <AppHeader />
@@ -29,12 +47,18 @@ function App() {
 
         <section className="workspace">
           <aside className="left-column">
-            <ScenarioPanel />
-            <VoiceInputPanel />
+            <ScenarioPanel
+              selectedScenarioKey={selectedScenarioKey}
+              customScenario={customScenario}
+              onSelectScenario={setSelectedScenarioKey}
+              onChangeCustomScenario={setCustomScenario}
+            />
+
+            <VoiceInputPanel activeScenarioName={activeScenarioName} />
           </aside>
 
           <main className="center-column">
-            <DialoguePanel />
+            <DialoguePanel activeScenarioName={activeScenarioName} />
           </main>
 
           <aside className="right-column">
