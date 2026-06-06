@@ -20,6 +20,8 @@ export type FeedbackStatus = 'idle' | 'generating' | 'success' | 'error';
 
 export type TtsStatus = 'idle' | 'speaking' | 'success' | 'error';
 
+export type DialogueMode = 'backend-ai' | 'backend-mock' | 'frontend-mock' | null;
+
 export interface DialogueMessage {
   id: string;
   role: MessageRole;
@@ -86,6 +88,18 @@ export interface MockDialogueResult {
   userMessage: DialogueMessage;
   aiMessage: DialogueMessage;
   feedback: DialogueTurnFeedback;
+}
+
+export interface DialogueApiRequest {
+  scenarioKey: ScenarioKey;
+  scenarioName: string;
+  userText: string;
+}
+
+export interface DialogueApiResponse {
+  aiMessage: DialogueMessage;
+  feedback: DialogueTurnFeedback;
+  mode: 'mock' | 'ai';
 }
 
 export interface PracticeReport {
