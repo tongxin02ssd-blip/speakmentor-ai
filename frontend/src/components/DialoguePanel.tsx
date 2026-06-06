@@ -1,10 +1,16 @@
-import { Alert, Card, Empty, Space, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Empty, Space, Tag, Tooltip, Typography } from 'antd';
 import {
   LoadingOutlined,
+  PauseCircleOutlined,
+  PlayCircleOutlined,
   RobotOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import type { AiReplyStatus, DialogueMessage } from '../types/practice';
+import type {
+  AiReplyStatus,
+  DialogueMessage,
+  TtsStatus,
+} from '../types/practice';
 
 const { Text, Paragraph } = Typography;
 
@@ -13,6 +19,12 @@ interface DialoguePanelProps {
   messages: DialogueMessage[];
   aiReplyStatus: AiReplyStatus;
   aiReplyError: string;
+  ttsStatus: TtsStatus;
+  speakingMessageId: string | null;
+  ttsError: string;
+  isTextToSpeechSupported: boolean;
+  onSpeakMessage: (message: DialogueMessage) => void;
+  onStopSpeaking: () => void;
 }
 
 const formatMessageTime = (value: string) => {
@@ -27,6 +39,12 @@ function DialoguePanel({
   messages,
   aiReplyStatus,
   aiReplyError,
+  ttsStatus,
+  speakingMessageId,
+  ttsError,
+  isTextToSpeechSupported,
+  onSpeakMessage,
+  onStopSpeaking,
 }: DialoguePanelProps) {
   const latestLatency = [...messages]
     .reverse()
@@ -39,8 +57,17 @@ function DialoguePanel({
       className="dialogue-card"
       title="AI 对话记录"
       extra={
-        <Space>
+        <Space wrap>
           {isAiThinking && <Tag color="processing">AI Thinking</Tag>}
+
+          {ttsStatus === 'speaking' && (
+            <Tag color="green">Speaking</Tag>
+          )}
+
+          <Tag color={isTextToSpeechSupported ? 'green' : 'orange'}>
+            {isTextToSpeechSupported ? 'TTS Ready' : 'TTS Limited'}
+          </Tag>
+
           <Tag color="processing">{activeScenarioName}</Tag>
         </Space>
       }
@@ -56,6 +83,8 @@ function DialoguePanel({
         <div className="dialogue-message-list">
           {messages.map((message) => {
             const isUser = message.role === 'user';
+            const isAssistant = message.role === 'assistant';
+            const isCurrentSpeaking = speakingMessageId === message.id;
 
             return (
               <div
@@ -73,12 +102,49 @@ function DialoguePanel({
                     <Text className="message-role">
                       {isUser ? 'You' : 'SpeakMentor AI'}
                     </Text>
+
                     <Text className="message-time">
                       {formatMessageTime(message.createdAt)}
                     </Text>
+
+                    {isAssistant && (
+                      <Tooltip
+                        title={
+                          isCurrentSpeaking
+                            ? '停止播报'
+                            : '播放 AI 英文回复'
+                        }
+                      >
+                        <Button
+                          className="tts-button"
+                          type="text"
+                          size="small"
+                          icon={
+                            isCurrentSpeaking ? (
+                              <PauseCircleOutlined />
+                            ) : (
+                              <PlayCircleOutlined />
+                            )
+                          }
+                          disabled={!isTextToSpeechSupported}
+                          onClick={() => {
+                            if (isCurrentSpeaking) {
+                              onStopSpeaking();
+                              return;
+                            }
+
+                            onSpeakMessage(message);
+                          }}
+                        />
+                      </Tooltip>
+                    )}
                   </div>
 
-                  <div className="message-bubble">
+                  <div
+                    className={`message-bubble ${
+                      isCurrentSpeaking ? 'message-bubble-speaking' : ''
+                    }`}
+                  >
                     <Paragraph className="message-text">
                       {message.content}
                     </Paragraph>
@@ -118,6 +184,25 @@ function DialoguePanel({
           type="error"
           showIcon
           message={aiReplyError}
+        />
+      )}
+
+      {ttsError && (
+        <Alert
+          className="dialogue-alert"
+          type="error"
+          showIcon
+          message={ttsError}
+        />
+      )}
+
+      {!isTextToSpeechSupported && (
+        <Alert
+          className="dialogue-alert"
+          type="warning"
+          showIcon
+          message="当前浏览器不支持 AI 回复语音播报"
+          description="建议使用 Chrome 或 Edge 浏览器进行演示；即使不支持 TTS，也不会影响对话和反馈主流程。"
         />
       )}
 

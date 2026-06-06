@@ -7,6 +7,7 @@ import ScenarioPanel from './components/ScenarioPanel';
 import VoiceInputPanel from './components/VoiceInputPanel';
 import { practiceScenarios } from './constants/scenarios';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
+import { useTextToSpeech } from './hooks/useTextToSpeech';
 import {
   createMockAiReplyResult,
   createMockAsrResult,
@@ -61,6 +62,15 @@ function App() {
     startRecognition,
     stopRecognition,
   } = useSpeechRecognition();
+
+  const {
+    isSupported: isTextToSpeechSupported,
+    ttsStatus,
+    speakingMessageId,
+    ttsError,
+    speak,
+    stopSpeaking,
+  } = useTextToSpeech();
 
   const selectedScenario = useMemo(() => {
     return practiceScenarios.find(
@@ -182,6 +192,7 @@ function App() {
     clearAiReplyTimer();
     clearFeedbackTimer();
     stopRecognition();
+    stopSpeaking();
 
     setMessages([]);
     setRecognitionStatus('idle');
@@ -208,6 +219,7 @@ function App() {
     clearRecognitionTimer();
     clearAiReplyTimer();
     clearFeedbackTimer();
+    stopSpeaking();
 
     setRecognitionStatus('recognizing');
     setRecognitionSource(null);
@@ -293,14 +305,19 @@ function App() {
     }
   };
 
+  const handleSpeakMessage = (message: DialogueMessage) => {
+    speak(message.content, message.id);
+  };
+
   useEffect(() => {
     return () => {
       clearRecognitionTimer();
       clearAiReplyTimer();
       clearFeedbackTimer();
       stopRecognition();
+      stopSpeaking();
     };
-  }, [stopRecognition]);
+  }, [stopRecognition, stopSpeaking]);
 
   return (
     <Layout className="app-shell">
@@ -349,6 +366,12 @@ function App() {
               messages={messages}
               aiReplyStatus={aiReplyStatus}
               aiReplyError={aiReplyError}
+              ttsStatus={ttsStatus}
+              speakingMessageId={speakingMessageId}
+              ttsError={ttsError}
+              isTextToSpeechSupported={isTextToSpeechSupported}
+              onSpeakMessage={handleSpeakMessage}
+              onStopSpeaking={stopSpeaking}
             />
           </main>
 

@@ -18,6 +18,8 @@ export type AiReplyStatus = 'idle' | 'thinking' | 'success' | 'error';
 
 export type FeedbackStatus = 'idle' | 'generating' | 'success' | 'error';
 
+export type TtsStatus = 'idle' | 'speaking' | 'success' | 'error';
+
 export interface DialogueMessage {
   id: string;
   role: MessageRole;
