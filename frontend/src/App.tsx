@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Layout, Typography } from 'antd';
+import { requestDialogue } from './api/dialogue';
 import AppHeader from './components/AppHeader';
 import DialoguePanel from './components/DialoguePanel';
 import FeedbackPanel from './components/FeedbackPanel';
@@ -16,6 +17,7 @@ import {
 import type {
   AiReplyStatus,
   DialogueMessage,
+  DialogueMode,
   DialogueTurnFeedback,
   FeedbackStatus,
   LatencyMetrics,
@@ -53,9 +55,11 @@ function App() {
     useState<DialogueTurnFeedback | null>(null);
   const [feedbackError, setFeedbackError] = useState('');
 
+  const [dialogueMode, setDialogueMode] = useState<DialogueMode>(null);
+  const [apiNotice, setApiNotice] = useState('');
+
   const recognitionTimerRef = useRef<number | null>(null);
-  const aiReplyTimerRef = useRef<number | null>(null);
-  const feedbackTimerRef = useRef<number | null>(null);
+  const dialogueRequestIdRef = useRef(0);
 
   const {
     isSupported: isSpeechRecognitionSupported,
@@ -90,79 +94,109 @@ function App() {
     }
   };
 
-  const clearAiReplyTimer = () => {
-    if (aiReplyTimerRef.current) {
-      window.clearTimeout(aiReplyTimerRef.current);
-      aiReplyTimerRef.current = null;
-    }
+  const invalidatePendingDialogueRequest = () => {
+    dialogueRequestIdRef.current += 1;
   };
 
-  const clearFeedbackTimer = () => {
-    if (feedbackTimerRef.current) {
-      window.clearTimeout(feedbackTimerRef.current);
-      feedbackTimerRef.current = null;
-    }
+  const applyFrontendMockDialogue = (
+    userMessageId: string,
+    userText: string,
+    asrMs: number,
+    notice: string,
+  ) => {
+    const mockAiResult = createMockAiReplyResult({
+      scenarioKey: selectedScenarioKey,
+      scenarioName: activeScenarioName,
+      userText,
+      asrMs,
+    });
+
+    const feedback = createMockTurnFeedback({
+      messageId: userMessageId,
+      userText,
+      scenarioKey: selectedScenarioKey,
+    });
+
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      mockAiResult.aiMessage,
+    ]);
+    setLatestFeedback(feedback);
+    setAiReplyStatus('success');
+    setFeedbackStatus('success');
+    setDialogueMode('frontend-mock');
+    setApiNotice(notice);
   };
 
-  const startMockFeedbackFlow = (messageId: string, userText: string) => {
-    clearFeedbackTimer();
-
-    setFeedbackStatus('generating');
-    setLatestFeedback(null);
-    setFeedbackError('');
-
-    feedbackTimerRef.current = window.setTimeout(() => {
-      try {
-        const feedback = createMockTurnFeedback({
-          messageId,
-          userText,
-          scenarioKey: selectedScenarioKey,
-        });
-
-        setLatestFeedback(feedback);
-        setFeedbackStatus('success');
-      } catch {
-        setFeedbackStatus('error');
-        setFeedbackError('Mock 纠错反馈生成失败，请重新尝试。');
-      } finally {
-        feedbackTimerRef.current = null;
-      }
-    }, 700);
-  };
-
-  const startMockAiReplyFlow = (
+  const startDialogueFlow = async (
     userMessageId: string,
     userText: string,
     asrMs: number,
   ) => {
-    clearAiReplyTimer();
+    invalidatePendingDialogueRequest();
+
+    const currentRequestId = dialogueRequestIdRef.current;
+    const startedAt = performance.now();
 
     setAiReplyStatus('thinking');
     setAiReplyError('');
+    setFeedbackStatus('generating');
+    setLatestFeedback(null);
+    setFeedbackError('');
+    setDialogueMode(null);
+    setApiNotice('');
 
-    aiReplyTimerRef.current = window.setTimeout(() => {
-      try {
-        const mockAiResult = createMockAiReplyResult({
-          scenarioKey: selectedScenarioKey,
-          scenarioName: activeScenarioName,
-          userText,
-          asrMs,
-        });
+    try {
+      const response = await requestDialogue({
+        scenarioKey: selectedScenarioKey,
+        scenarioName: activeScenarioName,
+        userText,
+      });
 
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          mockAiResult.aiMessage,
-        ]);
-        setAiReplyStatus('success');
-
-        startMockFeedbackFlow(userMessageId, userText);
-      } catch {
-        setAiReplyStatus('error');
-        setAiReplyError('Mock AI 回复生成失败，请重新尝试。');
-      } finally {
-        aiReplyTimerRef.current = null;
+      if (dialogueRequestIdRef.current !== currentRequestId) {
+        return;
       }
-    }, 900);
+
+      const fallbackAiMs = Math.round(performance.now() - startedAt);
+      const aiMs = response.aiMessage.latency?.aiMs ?? fallbackAiMs;
+
+      const normalizedAiMessage: DialogueMessage = {
+        ...response.aiMessage,
+        latency: {
+          asrMs,
+          aiMs,
+          totalMs: asrMs + aiMs,
+        },
+      };
+
+      const normalizedFeedback: DialogueTurnFeedback = {
+        ...response.feedback,
+        messageId: userMessageId,
+      };
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        normalizedAiMessage,
+      ]);
+      setLatestFeedback(normalizedFeedback);
+      setAiReplyStatus('success');
+      setFeedbackStatus('success');
+      setDialogueMode(response.mode === 'ai' ? 'backend-ai' : 'backend-mock');
+    } catch (error) {
+      if (dialogueRequestIdRef.current !== currentRequestId) {
+        return;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : '后端接口请求失败';
+
+      applyFrontendMockDialogue(
+        userMessageId,
+        userText,
+        asrMs,
+        `后端请求失败：${errorMessage}。已自动降级为前端 Mock，保证演示流程继续。`,
+      );
+    }
   };
 
   const appendUserMessage = (
@@ -184,13 +218,12 @@ function App() {
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setRecognitionStatus('success');
 
-    startMockAiReplyFlow(userMessage.id, text, latency.asrMs);
+    void startDialogueFlow(userMessage.id, text, latency.asrMs);
   };
 
   const resetPracticeState = () => {
     clearRecognitionTimer();
-    clearAiReplyTimer();
-    clearFeedbackTimer();
+    invalidatePendingDialogueRequest();
     stopRecognition();
     stopSpeaking();
 
@@ -208,6 +241,9 @@ function App() {
     setFeedbackStatus('idle');
     setLatestFeedback(null);
     setFeedbackError('');
+
+    setDialogueMode(null);
+    setApiNotice('');
   };
 
   const handleSelectScenario = (scenarioKey: ScenarioKey) => {
@@ -217,8 +253,7 @@ function App() {
 
   const prepareRecognition = () => {
     clearRecognitionTimer();
-    clearAiReplyTimer();
-    clearFeedbackTimer();
+    invalidatePendingDialogueRequest();
     stopSpeaking();
 
     setRecognitionStatus('recognizing');
@@ -234,6 +269,9 @@ function App() {
     setFeedbackStatus('idle');
     setLatestFeedback(null);
     setFeedbackError('');
+
+    setDialogueMode(null);
+    setApiNotice('');
   };
 
   const startMockRecognitionFlow = (notice?: string) => {
@@ -259,7 +297,7 @@ function App() {
         ]);
         setRecognitionStatus('success');
 
-        startMockAiReplyFlow(
+        void startDialogueFlow(
           mockResult.userMessage.id,
           mockResult.recognizedText,
           mockResult.latency.asrMs,
@@ -312,8 +350,7 @@ function App() {
   useEffect(() => {
     return () => {
       clearRecognitionTimer();
-      clearAiReplyTimer();
-      clearFeedbackTimer();
+      invalidatePendingDialogueRequest();
       stopRecognition();
       stopSpeaking();
     };
@@ -366,6 +403,8 @@ function App() {
               messages={messages}
               aiReplyStatus={aiReplyStatus}
               aiReplyError={aiReplyError}
+              dialogueMode={dialogueMode}
+              apiNotice={apiNotice}
               ttsStatus={ttsStatus}
               speakingMessageId={speakingMessageId}
               ttsError={ttsError}

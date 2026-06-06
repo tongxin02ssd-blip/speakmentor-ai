@@ -9,6 +9,7 @@ import {
 import type {
   AiReplyStatus,
   DialogueMessage,
+  DialogueMode,
   TtsStatus,
 } from '../types/practice';
 
@@ -19,6 +20,8 @@ interface DialoguePanelProps {
   messages: DialogueMessage[];
   aiReplyStatus: AiReplyStatus;
   aiReplyError: string;
+  dialogueMode: DialogueMode;
+  apiNotice: string;
   ttsStatus: TtsStatus;
   speakingMessageId: string | null;
   ttsError: string;
@@ -34,11 +37,25 @@ const formatMessageTime = (value: string) => {
   });
 };
 
+const dialogueModeTextMap: Record<Exclude<DialogueMode, null>, string> = {
+  'backend-ai': 'Backend AI',
+  'backend-mock': 'Backend Mock',
+  'frontend-mock': 'Frontend Mock',
+};
+
+const dialogueModeColorMap: Record<Exclude<DialogueMode, null>, string> = {
+  'backend-ai': 'green',
+  'backend-mock': 'blue',
+  'frontend-mock': 'orange',
+};
+
 function DialoguePanel({
   activeScenarioName,
   messages,
   aiReplyStatus,
   aiReplyError,
+  dialogueMode,
+  apiNotice,
   ttsStatus,
   speakingMessageId,
   ttsError,
@@ -60,9 +77,13 @@ function DialoguePanel({
         <Space wrap>
           {isAiThinking && <Tag color="processing">AI Thinking</Tag>}
 
-          {ttsStatus === 'speaking' && (
-            <Tag color="green">Speaking</Tag>
+          {dialogueMode && (
+            <Tag color={dialogueModeColorMap[dialogueMode]}>
+              {dialogueModeTextMap[dialogueMode]}
+            </Tag>
           )}
+
+          {ttsStatus === 'speaking' && <Tag color="green">Speaking</Tag>}
 
           <Tag color={isTextToSpeechSupported ? 'green' : 'orange'}>
             {isTextToSpeechSupported ? 'TTS Ready' : 'TTS Limited'}
@@ -169,13 +190,22 @@ function DialoguePanel({
                 <div className="message-bubble thinking-bubble">
                   <Space>
                     <LoadingOutlined />
-                    <Text>AI 正在根据当前场景生成英文回复...</Text>
+                    <Text>AI 正在请求后端生成英文回复...</Text>
                   </Space>
                 </div>
               </div>
             </div>
           )}
         </div>
+      )}
+
+      {apiNotice && (
+        <Alert
+          className="dialogue-alert"
+          type="info"
+          showIcon
+          message={apiNotice}
+        />
       )}
 
       {aiReplyError && (
