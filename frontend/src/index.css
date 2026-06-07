@@ -717,6 +717,126 @@ body {
   background: #2563eb;
 }
 
+.report-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-loading {
+  padding-top: 8px;
+}
+
+.report-error {
+  width: 100%;
+}
+
+.report-detail {
+  width: 100%;
+}
+
+.report-summary-card {
+  padding: 16px;
+  border-radius: 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: #111827;
+}
+
+.report-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #d1d5db;
+  font-size: 12px;
+}
+
+.report-title {
+  display: block;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.report-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-meta-item {
+  padding: 14px;
+  border-radius: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+}
+
+.report-meta-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.report-meta-value {
+  display: block;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.report-section {
+  padding: 14px;
+  border-radius: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+}
+
+.report-next-section {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.report-section-title {
+  display: block;
+  margin-bottom: 12px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-list-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: #2563eb;
+}
+
+.report-list-item .ant-typography {
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.report-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-time {
+  display: block;
+  color: #9ca3af;
+  font-size: 12px;
+  text-align: right;
+}
+
 /* 响应式 */
 
 @media (max-width: 1180px) {

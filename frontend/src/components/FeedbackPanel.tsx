@@ -1,5 +1,6 @@
 import {
   Alert,
+  Button,
   Card,
   Divider,
   Empty,
@@ -12,11 +13,14 @@ import {
 import {
   BulbOutlined,
   CheckCircleOutlined,
+  FileTextOutlined,
   SoundOutlined,
 } from '@ant-design/icons';
 import type {
   DialogueTurnFeedback,
   FeedbackStatus,
+  PracticeReport,
+  ReportStatus,
 } from '../types/practice';
 import {
   createScoreDimensions,
@@ -32,14 +36,35 @@ interface FeedbackPanelProps {
   feedbackStatus: FeedbackStatus;
   latestFeedback: DialogueTurnFeedback | null;
   feedbackError: string;
+  reportStatus: ReportStatus;
+  practiceReport: PracticeReport | null;
+  reportError: string;
+  canGenerateReport: boolean;
+  onGenerateReport: () => void;
 }
+
+const formatReportTime = (value: string) => {
+  return new Date(value).toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
 function FeedbackPanel({
   feedbackStatus,
   latestFeedback,
   feedbackError,
+  reportStatus,
+  practiceReport,
+  reportError,
+  canGenerateReport,
+  onGenerateReport,
 }: FeedbackPanelProps) {
   const isGenerating = feedbackStatus === 'generating';
+  const isReportGenerating = reportStatus === 'generating';
+
   const score = latestFeedback?.score;
   const scoreLevel = score ? getScoreLevel(score.overall) : null;
   const scoreDimensions = score ? createScoreDimensions(score) : [];
@@ -207,6 +232,137 @@ function FeedbackPanel({
               ))}
             </Space>
           </>
+        )}
+      </Card>
+
+      <Card
+        className="panel-card"
+        title="课后总结"
+        extra={<FileTextOutlined />}
+      >
+        {reportStatus === 'idle' && (
+          <div className="report-empty">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="完成练习后生成课后总结"
+            />
+
+            <Button
+              type="primary"
+              block
+              disabled={!canGenerateReport}
+              onClick={onGenerateReport}
+            >
+              生成课后总结
+            </Button>
+          </div>
+        )}
+
+        {isReportGenerating && (
+          <div className="report-loading">
+            <Skeleton active paragraph={{ rows: 5 }} />
+          </div>
+        )}
+
+        {reportStatus === 'error' && reportError && (
+          <Space direction="vertical" size={12} className="report-error">
+            <Alert type="error" showIcon message={reportError} />
+
+            <Button
+              type="primary"
+              block
+              disabled={!canGenerateReport}
+              onClick={onGenerateReport}
+            >
+              重新生成
+            </Button>
+          </Space>
+        )}
+
+        {reportStatus === 'success' && practiceReport && (
+          <Space direction="vertical" size={16} className="report-detail">
+            <div className="report-summary-card">
+              <div>
+                <Text className="report-label">练习场景</Text>
+                <Text className="report-title">
+                  {practiceReport.scenarioName}
+                </Text>
+              </div>
+
+              <Tag color={getScoreTagColor(practiceReport.overallScore)}>
+                {practiceReport.overallScore} 分
+              </Tag>
+            </div>
+
+            <div className="report-meta-grid">
+              <div className="report-meta-item">
+                <Text className="report-meta-label">对话轮数</Text>
+                <Text className="report-meta-value">
+                  {practiceReport.totalTurns}
+                </Text>
+              </div>
+
+              <div className="report-meta-item">
+                <Text className="report-meta-label">练习时长</Text>
+                <Text className="report-meta-value">
+                  {practiceReport.durationText}
+                </Text>
+              </div>
+            </div>
+
+            <div className="report-section">
+              <Text className="report-section-title">表达亮点</Text>
+              <div className="report-list">
+                {practiceReport.strengths.map((item) => (
+                  <div className="report-list-item" key={item}>
+                    <CheckCircleOutlined />
+                    <Text>{item}</Text>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="report-section">
+              <Text className="report-section-title">需要改进</Text>
+              <div className="report-list">
+                {practiceReport.improvements.map((item) => (
+                  <div className="report-list-item" key={item}>
+                    <BulbOutlined />
+                    <Text>{item}</Text>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="report-section">
+              <Text className="report-section-title">常见问题</Text>
+              <div className="report-tag-list">
+                {practiceReport.commonErrors.map((item) => (
+                  <Tag key={item}>{item}</Tag>
+                ))}
+              </div>
+            </div>
+
+            <div className="report-section report-next-section">
+              <Text className="report-section-title">下一步建议</Text>
+              <div className="report-list">
+                {practiceReport.nextPracticeTips.map((item) => (
+                  <div className="report-list-item" key={item}>
+                    <FileTextOutlined />
+                    <Text>{item}</Text>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Text className="report-time">
+              生成时间：{formatReportTime(practiceReport.generatedAt)}
+            </Text>
+
+            <Button block onClick={onGenerateReport}>
+              重新生成总结
+            </Button>
+          </Space>
         )}
       </Card>
     </div>

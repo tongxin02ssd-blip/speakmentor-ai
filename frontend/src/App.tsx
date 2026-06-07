@@ -12,6 +12,7 @@ import { useTextToSpeech } from './hooks/useTextToSpeech';
 import {
   createMockAiReplyResult,
   createMockAsrResult,
+  createMockPracticeReport,
   createMockTurnFeedback,
 } from './mocks';
 import type {
@@ -21,8 +22,10 @@ import type {
   DialogueTurnFeedback,
   FeedbackStatus,
   LatencyMetrics,
+  PracticeReport,
   RecognitionSource,
   RecognitionStatus,
+  ReportStatus,
   ScenarioKey,
 } from './types/practice';
 import { createDialogueMessage } from './utils/message';
@@ -55,10 +58,17 @@ function App() {
     useState<DialogueTurnFeedback | null>(null);
   const [feedbackError, setFeedbackError] = useState('');
 
+  const [reportStatus, setReportStatus] =
+    useState<ReportStatus>('idle');
+  const [practiceReport, setPracticeReport] =
+    useState<PracticeReport | null>(null);
+  const [reportError, setReportError] = useState('');
+
   const [dialogueMode, setDialogueMode] = useState<DialogueMode>(null);
   const [apiNotice, setApiNotice] = useState('');
 
   const recognitionTimerRef = useRef<number | null>(null);
+  const reportTimerRef = useRef<number | null>(null);
   const dialogueRequestIdRef = useRef(0);
 
   const {
@@ -87,6 +97,11 @@ function App() {
       ? customScenario.trim()
       : selectedScenario?.title ?? '未选择场景';
 
+  const canGenerateReport =
+    messages.some((message) => message.role === 'user') &&
+    feedbackStatus === 'success' &&
+    Boolean(latestFeedback);
+
   const clearRecognitionTimer = () => {
     if (recognitionTimerRef.current) {
       window.clearTimeout(recognitionTimerRef.current);
@@ -94,8 +109,51 @@ function App() {
     }
   };
 
+  const clearReportTimer = () => {
+    if (reportTimerRef.current) {
+      window.clearTimeout(reportTimerRef.current);
+      reportTimerRef.current = null;
+    }
+  };
+
   const invalidatePendingDialogueRequest = () => {
     dialogueRequestIdRef.current += 1;
+  };
+
+  const handleGenerateReport = () => {
+    clearReportTimer();
+
+    if (!canGenerateReport) {
+      setReportStatus('error');
+      setReportError('请先完成至少一轮对话，再生成课后总结。');
+      return;
+    }
+
+    setReportStatus('generating');
+    setPracticeReport(null);
+    setReportError('');
+
+    reportTimerRef.current = window.setTimeout(() => {
+      try {
+        const totalTurns = messages.filter(
+          (message) => message.role === 'user',
+        ).length;
+
+        const report = createMockPracticeReport({
+          scenarioName: activeScenarioName,
+          totalTurns,
+          overallScore: latestFeedback?.score.overall ?? 80,
+        });
+
+        setPracticeReport(report);
+        setReportStatus('success');
+      } catch {
+        setReportStatus('error');
+        setReportError('课后总结生成失败，请重新尝试。');
+      } finally {
+        reportTimerRef.current = null;
+      }
+    }, 700);
   };
 
   const applyFrontendMockDialogue = (
@@ -143,6 +201,9 @@ function App() {
     setFeedbackStatus('generating');
     setLatestFeedback(null);
     setFeedbackError('');
+    setReportStatus('idle');
+    setPracticeReport(null);
+    setReportError('');
     setDialogueMode(null);
     setApiNotice('');
 
@@ -223,6 +284,7 @@ function App() {
 
   const resetPracticeState = () => {
     clearRecognitionTimer();
+    clearReportTimer();
     invalidatePendingDialogueRequest();
     stopRecognition();
     stopSpeaking();
@@ -242,6 +304,10 @@ function App() {
     setLatestFeedback(null);
     setFeedbackError('');
 
+    setReportStatus('idle');
+    setPracticeReport(null);
+    setReportError('');
+
     setDialogueMode(null);
     setApiNotice('');
   };
@@ -253,6 +319,7 @@ function App() {
 
   const prepareRecognition = () => {
     clearRecognitionTimer();
+    clearReportTimer();
     invalidatePendingDialogueRequest();
     stopSpeaking();
 
@@ -269,6 +336,10 @@ function App() {
     setFeedbackStatus('idle');
     setLatestFeedback(null);
     setFeedbackError('');
+
+    setReportStatus('idle');
+    setPracticeReport(null);
+    setReportError('');
 
     setDialogueMode(null);
     setApiNotice('');
@@ -350,6 +421,7 @@ function App() {
   useEffect(() => {
     return () => {
       clearRecognitionTimer();
+      clearReportTimer();
       invalidatePendingDialogueRequest();
       stopRecognition();
       stopSpeaking();
@@ -419,6 +491,11 @@ function App() {
               feedbackStatus={feedbackStatus}
               latestFeedback={latestFeedback}
               feedbackError={feedbackError}
+              reportStatus={reportStatus}
+              practiceReport={practiceReport}
+              reportError={reportError}
+              canGenerateReport={canGenerateReport}
+              onGenerateReport={handleGenerateReport}
             />
           </aside>
         </section>
