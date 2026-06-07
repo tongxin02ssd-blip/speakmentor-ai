@@ -1,7 +1,6 @@
-
 import type { Request, Response } from 'express';
 import type { DialogueRequest, ScenarioKey } from '../types/practice';
-import { createMockDialogueResponse } from '../services/dialogueService';
+import { createDialogueResponse } from '../services/dialogueService';
 
 const validScenarioKeys: ScenarioKey[] = [
   'interview',
@@ -17,8 +16,9 @@ const isValidScenarioKey = (value: unknown): value is ScenarioKey => {
   );
 };
 
-export const createDialogue = (req: Request, res: Response) => {
-  const { scenarioKey, scenarioName, userText } = req.body as Partial<DialogueRequest>;
+export const createDialogue = async (req: Request, res: Response) => {
+  const { scenarioKey, scenarioName, userText } =
+    req.body as Partial<DialogueRequest>;
 
   if (!isValidScenarioKey(scenarioKey)) {
     return res.status(400).json({
@@ -38,7 +38,7 @@ export const createDialogue = (req: Request, res: Response) => {
     });
   }
 
-  const result = createMockDialogueResponse({
+  const result = await createDialogueResponse({
     scenarioKey,
     scenarioName,
     userText,
