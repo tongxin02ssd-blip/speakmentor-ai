@@ -6,6 +6,7 @@ import type {
   ScenarioKey,
   ScoreResult,
 } from '../types/practice';
+import { requestAiDialogue } from './aiService';
 
 const mockAiReplies: Record<ScenarioKey, string> = {
   interview:
@@ -101,6 +102,7 @@ export const createMockDialogueResponse = (
   const aiMs = 880;
   const asrMs = 0;
   const totalMs = aiMs;
+  const userMessageId = createId('user-message');
 
   const aiMessage: DialogueMessage = {
     id: createId('ai-message'),
@@ -119,10 +121,54 @@ export const createMockDialogueResponse = (
   return {
     aiMessage,
     feedback: createMockFeedback(
-      createId('user-message'),
+      userMessageId,
       request.userText,
       request.scenarioKey,
     ),
     mode: 'mock',
   };
+};
+
+export const createDialogueResponse = async (
+  request: DialogueRequest,
+): Promise<DialogueResponse> => {
+  const startedAt = Date.now();
+
+  try {
+    const aiPayload = await requestAiDialogue(request);
+    const aiMs = Date.now() - startedAt;
+    const userMessageId = createId('user-message');
+
+    const aiMessage: DialogueMessage = {
+      id: createId('ai-message'),
+      role: 'assistant',
+      content: aiPayload.reply,
+      scenarioKey: request.scenarioKey,
+      scenarioName: request.scenarioName,
+      createdAt: new Date().toISOString(),
+      latency: {
+        asrMs: 0,
+        aiMs,
+        totalMs: aiMs,
+      },
+    };
+
+    return {
+      aiMessage,
+      feedback: {
+        messageId: userMessageId,
+        correction: aiPayload.correction,
+        pronunciation: aiPayload.pronunciation,
+        score: aiPayload.score,
+      },
+      mode: 'ai',
+    };
+  } catch (error) {
+    console.warn(
+      '[AI fallback]',
+      error instanceof Error ? error.message : error,
+    );
+
+    return createMockDialogueResponse(request);
+  }
 };
