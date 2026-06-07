@@ -247,18 +247,20 @@ export const createMockDialogueResult = ({
 interface CreateMockReportParams {
   scenarioName: string;
   totalTurns: number;
+  overallScore?: number;
 }
 
 export const createMockPracticeReport = ({
   scenarioName,
   totalTurns,
+  overallScore = 80,
 }: CreateMockReportParams): PracticeReport => {
   return {
     id: createId('practice-report'),
     scenarioName,
     totalTurns,
     durationText: '约 3 分钟',
-    overallScore: 80,
+    overallScore,
     strengths: [
       '能够围绕当前场景完成基本英文表达。',
       '表达意图清晰，适合继续进行多轮对话训练。',

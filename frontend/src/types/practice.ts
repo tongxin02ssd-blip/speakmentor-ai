@@ -22,6 +22,8 @@ export type TtsStatus = 'idle' | 'speaking' | 'success' | 'error';
 
 export type DialogueMode = 'backend-ai' | 'backend-mock' | 'frontend-mock' | null;
 
+export type ReportStatus = 'idle' | 'generating' | 'success' | 'error';
+
 export interface DialogueMessage {
   id: string;
   role: MessageRole;
