@@ -29,6 +29,7 @@ import type {
   ScenarioKey,
 } from './types/practice';
 import { createDialogueMessage } from './utils/message';
+import { exportPracticeReportAsMarkdown } from './utils/report';
 
 const { Content } = Layout;
 const { Title, Paragraph } = Typography;
@@ -102,6 +103,8 @@ function App() {
     feedbackStatus === 'success' &&
     Boolean(latestFeedback);
 
+  const canExportReport = Boolean(practiceReport);
+
   const clearRecognitionTimer = () => {
     if (recognitionTimerRef.current) {
       window.clearTimeout(recognitionTimerRef.current);
@@ -154,6 +157,18 @@ function App() {
         reportTimerRef.current = null;
       }
     }, 700);
+  };
+
+  const handleExportReport = () => {
+    if (!practiceReport) {
+      return;
+    }
+
+    exportPracticeReportAsMarkdown({
+      report: practiceReport,
+      messages,
+      latestFeedback,
+    });
   };
 
   const applyFrontendMockDialogue = (
@@ -495,7 +510,9 @@ function App() {
               practiceReport={practiceReport}
               reportError={reportError}
               canGenerateReport={canGenerateReport}
+              canExportReport={canExportReport}
               onGenerateReport={handleGenerateReport}
+              onExportReport={handleExportReport}
             />
           </aside>
         </section>

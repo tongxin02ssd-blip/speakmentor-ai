@@ -837,6 +837,10 @@ body {
   text-align: right;
 }
 
+.report-action-group {
+  width: 100%;
+}
+
 /* 响应式 */
 
 @media (max-width: 1180px) {

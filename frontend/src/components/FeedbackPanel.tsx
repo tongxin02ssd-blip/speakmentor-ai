@@ -40,7 +40,9 @@ interface FeedbackPanelProps {
   practiceReport: PracticeReport | null;
   reportError: string;
   canGenerateReport: boolean;
+  canExportReport: boolean;
   onGenerateReport: () => void;
+  onExportReport: () => void;
 }
 
 const formatReportTime = (value: string) => {
@@ -60,7 +62,9 @@ function FeedbackPanel({
   practiceReport,
   reportError,
   canGenerateReport,
+  canExportReport,
   onGenerateReport,
+  onExportReport,
 }: FeedbackPanelProps) {
   const isGenerating = feedbackStatus === 'generating';
   const isReportGenerating = reportStatus === 'generating';
@@ -359,9 +363,20 @@ function FeedbackPanel({
               生成时间：{formatReportTime(practiceReport.generatedAt)}
             </Text>
 
-            <Button block onClick={onGenerateReport}>
-              重新生成总结
-            </Button>
+            <Space direction="vertical" size={10} className="report-action-group">
+              <Button
+                type="primary"
+                block
+                disabled={!canExportReport}
+                onClick={onExportReport}
+              >
+                导出 Markdown 报告
+              </Button>
+
+              <Button block onClick={onGenerateReport}>
+                重新生成总结
+              </Button>
+            </Space>
           </Space>
         )}
       </Card>
