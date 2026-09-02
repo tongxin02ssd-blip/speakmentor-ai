@@ -12,9 +12,17 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  console.error(error);
+  void _next;
+  console.error('[request error]', error.message);
 
-  return res.status(500).json({
-    message: 'Internal server error',
+  const errorStatus =
+    'status' in error && typeof error.status === 'number' ? error.status : 500;
+  const status = errorStatus >= 400 && errorStatus < 600 ? errorStatus : 500;
+
+  return res.status(status).json({
+    message:
+      status === 400
+        ? 'The request body is invalid.'
+        : 'The service is temporarily unavailable. Please try again later.',
   });
 };
